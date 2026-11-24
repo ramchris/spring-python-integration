@@ -1,0 +1,8 @@
+.gradle/
+build/
+.idea/
+*.iml
+python-model/.venv/
+python-model/artifacts/
+__pycache__/
+.pytest_cache/

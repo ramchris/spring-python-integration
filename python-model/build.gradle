@@ -1,0 +1,51 @@
+// Drives the Python side (venv, deps, training, tests, serving) from Gradle.
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+def venvDir   = layout.projectDirectory.dir('.venv')
+def venvBin   = venvDir.dir(isWindows ? 'Scripts' : 'bin')
+def py        = venvBin.file(isWindows ? 'python.exe' : 'python').asFile.absolutePath
+def systemPy  = (findProperty('pythonExe') ?: (isWindows ? 'python' : 'python3')) as String
+
+tasks.register('createVenv', Exec) {
+    group = 'python'
+    description = 'Creates a local virtualenv in python-model/.venv'
+    onlyIf { !venvDir.asFile.exists() }
+    commandLine systemPy, '-m', 'venv', venvDir.asFile.absolutePath
+}
+
+tasks.register('pipInstall', Exec) {
+    group = 'python'
+    description = 'Installs Python dependencies from requirements.txt'
+    dependsOn 'createVenv'
+    inputs.file('requirements.txt')
+    outputs.file(venvDir.file('.installed'))
+    commandLine py, '-m', 'pip', 'install', '-q', '-r', 'requirements.txt'
+    doLast { venvDir.file('.installed').asFile.text = new Date().toString() }
+}
+
+tasks.register('trainModel', Exec) {
+    group = 'python'
+    description = 'Trains the model and writes artifacts/model.joblib'
+    dependsOn 'pipInstall'
+    inputs.files(fileTree('app') { include '**/*.py' })
+    outputs.dir('artifacts')
+    commandLine py, '-m', 'app.train'
+}
+
+tasks.register('pyTest', Exec) {
+    group = 'verification'
+    description = 'Runs the Python test suite with pytest'
+    dependsOn 'pipInstall'
+    commandLine py, '-m', 'pytest', '-q', 'tests'
+}
+
+tasks.register('runModelServer', Exec) {
+    group = 'application'
+    description = 'Starts the FastAPI model service on port 8000'
+    dependsOn 'trainModel'
+    commandLine py, '-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', (findProperty('pyPort') ?: '8000')
+}
+
+tasks.register('clean', Delete) {
+    group = 'build'
+    delete 'artifacts', '.pytest_cache'
+}

@@ -1,0 +1,9 @@
+.git
+.gradle
+.idea
+**/build
+**/.venv
+**/artifacts
+**/__pycache__
+**/.pytest_cache
+*.zip

@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ml-app
+  threads:
+    virtual:
+      enabled: true   # Java 21 virtual threads for blocking HTTP calls to the model
+
+model-service:
+  base-url: ${MODEL_SERVICE_URL:http://localhost:8000}
+  connect-timeout: 2s
+  read-timeout: 30s   # /train can take a few seconds
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

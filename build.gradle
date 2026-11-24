@@ -1,0 +1,17 @@
+// Root build: orchestrates the Spring Boot app and the Python model service.
+plugins {
+    id 'org.springframework.boot' version '3.5.7' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+}
+
+allprojects {
+    group = 'com.example'
+    version = '0.1.0'
+}
+
+// Convenience aggregate: ./gradlew buildAll
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Trains the Python model, runs Python tests, and builds the Spring Boot jar.'
+    dependsOn ':python-model:pyTest', ':python-model:trainModel', ':spring-app:build'
+}

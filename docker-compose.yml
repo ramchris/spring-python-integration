@@ -1,0 +1,30 @@
+services:
+  model-service:
+    build:
+      context: ./python-model
+    image: ml-platform/model-service:0.1.0
+    ports:
+      - "8000:8000"
+    volumes:
+      # Keeps models retrained via /train across container restarts.
+      # On first run Docker seeds this volume with the model baked into the image.
+      - model-artifacts:/app/artifacts
+    restart: unless-stopped
+
+  spring-app:
+    build:
+      context: .
+      dockerfile: spring-app/Dockerfile
+    image: ml-platform/spring-app:0.1.0
+    ports:
+      - "8080:8080"
+    environment:
+      # Service name resolves on the compose network.
+      MODEL_SERVICE_URL: http://model-service:8000
+    depends_on:
+      model-service:
+        condition: service_healthy   # waits for the Dockerfile HEALTHCHECK to pass
+    restart: unless-stopped
+
+volumes:
+  model-artifacts:

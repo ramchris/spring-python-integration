@@ -1,0 +1,4 @@
+rootProject.name = 'ml-platform'
+
+include 'spring-app'
+include 'python-model'
